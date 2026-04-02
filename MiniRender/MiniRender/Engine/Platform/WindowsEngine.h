@@ -23,4 +23,8 @@ public:
 	virtual int PreExit();
 	virtual int Exit();
 	virtual int PostExit();
+
+private:
+
+	bool InitWindows(FWinCommandParameters InParams);
 };
