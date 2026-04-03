@@ -4,24 +4,25 @@
 #include "CommandParameters.h"
 #endif //
 
-class FEngine {
+class FEngine
+{
 public:
-	virtual int PreInit(
+    virtual int PreInit(
 #if defined(_WIN32)
-		FWinCommandParameters InParams
+        FWinCommandParameters InParams
 #elif defined(__linux__)
 		FLinuxCommandParameters InParams
 #elif defined(__APPLE__)
 		FAppleCommandParameters InParams
 #endif
-	) = 0;
+    ) = 0;
 
-	virtual int Init() = 0;
-	virtual int PostInit() = 0;
+    virtual int Init(FWinCommandParameters InParams) = 0;
+    virtual int PostInit() = 0;
 
-	virtual void Tick() = 0;
+    virtual void Tick() = 0;
 
-	virtual int PreExit() = 0;
-	virtual int Exit() = 0;
-	virtual int PostExit() = 0;
+    virtual int PreExit() = 0;
+    virtual int Exit() = 0;
+    virtual int PostExit() = 0;
 };

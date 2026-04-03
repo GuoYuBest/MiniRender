@@ -22,3 +22,41 @@ DSV:深度模版缓冲区。
 
 最终的画面：
     PSO1->PSO2->PSO3->......PSO:多个PSO叠加成最后的渲染画面。
+
+DX12初始化流程:
+DXGIFactory
+CommandAllocator:命令存储队列
+GraphicsCommandList:创建命令
+    ResourceBarrier
+    RSSetViewports
+    RSSetScissorRects
+    ClearRenderTargetView
+    ClearDepthStencilView
+    OMSetRenderTargets
+    Close
+CommandQueue
+    ExecuteCommandLists:执行命令队列
+    Signal:信号量同步，比如CPU执行一个操作，信号是1传给GPU，GPU操作完成以后，将信号改成2回传给CPU，这样CPU继续执行，否则进入等待。但是这种方法并不高效。
+D3dDevice:图形驱动，用来创建上述命令
+    CreateCommandList
+    CreateCommandQueue
+    CreateCommandAllocators
+    CheckFeatureSupport
+    CreateFence
+    CreateDepthStencilView
+    CreateCommittedResource
+Fence
+    GPU和CPU的同步问题
+交换链:主要前后交换链，避免画面撕裂。本质交换两个指针。当然还有三层交换链...
+资源描述符:主要设置
+    CBV:常量缓冲区视图
+    SRV:着色器资源视图
+    UAV:无序访问视图 
+    RTV:渲染目标视图资源
+    DSV:深度模版视图资源
+    SAMPLER:采样器视图
+WaitGPUCommandQueueComplete:结合Fence来做CPU和GPU之间的同步
+SwapChainBuffer:交换链的Buff，前台和后台缓冲区不断交换来渲染
+ResourceDesc:资源的描述(宽高，层级，格式等等)
+深度缓冲区:范围0~1，从近到远，其实就是深度Buff
+多重采样:MSAA，抗锯齿，修复走样，SSAA(超采样)，

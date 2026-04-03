@@ -124,6 +124,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Config\RenderConfig.cpp" />
     <ClCompile Include="Engine\Core\CommandParameters.cpp" />
     <ClCompile Include="Engine\Core\Engine.cpp" />
     <ClCompile Include="Engine\EngineFactory.cpp" />
@@ -168,6 +169,7 @@
     <ClCompile Include="simple_library\private\simple_math\transformation\vector\vector_color.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Config\RenderConfig.h" />
     <ClInclude Include="Engine\Core\CommandParameters.h" />
     <ClInclude Include="Engine\Core\Engine.h" />
     <ClInclude Include="Engine\Debug\Log\SimpleLog.h" />

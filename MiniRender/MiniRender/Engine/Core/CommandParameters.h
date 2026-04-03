@@ -3,15 +3,15 @@
 #include "../Minimal.h"
 
 #if defined(_WIN32)
-class FWinCommandParameters {
+class FWinCommandParameters
+{
 public:
+    FWinCommandParameters(HINSTANCE InInstance, HINSTANCE InPrevInstance, PSTR InCmdLine, int InCmdShow);
 
-	FWinCommandParameters(HINSTANCE InInstance, HINSTANCE InPrevInstance, PSTR InCmdLine, int InCmdShow);
-
-	HINSTANCE Instance;
-	HINSTANCE PrevInstance;
-	PSTR CmdLine;
-	int CmdShow;
+    HINSTANCE Instance;
+    HINSTANCE PrevInstance;
+    PSTR CmdLine;
+    int CmdShow;
 };
 
 #elif defined(__linux__)

@@ -2,10 +2,10 @@
 
 #include "Core/Engine.h"
 
-class FEngineFactory {
+class FEngineFactory
+{
 public:
+    FEngineFactory();
 
-	FEngineFactory();
-
-	static FEngine* CreateEngine();
+    static FEngine* CreateEngine();
 };
