@@ -12,21 +12,31 @@ int FWindowsEngine::PreInit(
 #endif
 )
 {
+	const char LogPath[] = "../log";
+	init_log_system(LogPath);
+	Engine_Log("Log Init");
+	
 	if (InitWindows(InParams))
 	{
 		
 	}
+
+	Engine_Log("Windows PreInit Success!");
 	
 	return 0;
 }
 
 int FWindowsEngine::Init()
 {
+	Engine_Log("Windows Init Success!");
+
 	return 0;
 }
 
 int FWindowsEngine::PostInit()
 {
+	Engine_Log("Windows PostInit Success!");
+
 	return 0;
 }
 
@@ -36,16 +46,22 @@ void FWindowsEngine::Tick()
 
 int FWindowsEngine::PreExit()
 {
+	Engine_Log("Windows PreExit Success!");
+
 	return 0;
 }
 
 int FWindowsEngine::Exit()
 {
+	Engine_Log("Windows Exit Success!");
+
 	return 0;
 }
 
 int FWindowsEngine::PostExit()
 {
+	Engine_Log("Windows PostExit Success!");
+
 	return 0;
 }
 
@@ -68,6 +84,8 @@ bool FWindowsEngine::InitWindows(FWinCommandParameters InParams)
 	ATOM RegisterAtom = RegisterClassEx(&WinClass);
 	if (!RegisterAtom)
 	{
+		Engine_Log_Error("Windows RegisterClassEx Failed!");
+
 		MessageBox(nullptr, L"RegisterClassEx Failed!", L"Error", MB_OK);
 	}
 
@@ -92,9 +110,12 @@ bool FWindowsEngine::InitWindows(FWinCommandParameters InParams)
 	if (!Window)
 	{
 		MessageBox(nullptr, L"CreateWindowEx Failed!", L"Error", MB_OK);
+		Engine_Log_Error("Windows CreateWindowEx Failed!");
 		return false;
 	}
 
 	ShowWindow(Window, SW_SHOW);
 	UpdateWindow(Window);
+
+	Engine_Log("Windows InitWindows Success!");
 }
