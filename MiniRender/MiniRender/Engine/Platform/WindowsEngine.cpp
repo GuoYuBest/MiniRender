@@ -3,7 +3,10 @@
 #include "../Config/RenderConfig.h"
 
 FWindowsEngine::FWindowsEngine()
-    : M4XQualityLevels(0), bMSAA4XEnabled(false), BackBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM)
+    : M4XQualityLevels(0)
+    , bMSAA4XEnabled(false)
+    , BackBufferFormat(DXGI_FORMAT_R8G8B8A8_UNORM)
+    , DepthStencilFormat(DXGI_FORMAT_D24_UNORM_S8_UINT)
 {
     FRenderConfig* Config = FRenderConfig::GetRenderConfig();
 
@@ -60,15 +63,61 @@ int FWindowsEngine::PostInit()
         DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
     );
     RTVDescSize = D3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-    D3D12_CPU_DESCRIPTOR_HANDLE HeapHandle = RTVHeap->GetCPUDescriptorHandleForHeapStart();
-    HeapHandle.ptr = 0;
-    
+    CD3DX12_CPU_DESCRIPTOR_HANDLE HeapHandle(RTVHeap->GetCPUDescriptorHandleForHeapStart());
     for (int idx = 0; idx < Config->SwapChainCount; idx++)
     {
         SwapChain->GetBuffer(idx, IID_PPV_ARGS(&SwapChainBuffer[idx]));
         D3dDevice->CreateRenderTargetView(SwapChainBuffer[idx].Get(), nullptr, HeapHandle);
-        HeapHandle.ptr += RTVDescSize; // RTV Offset
+        HeapHandle.Offset(1, RTVDescSize);
     }
+
+    D3D12_RESOURCE_DESC ResDesc;
+    ResDesc.Width = Config->ScreenWidth;
+    ResDesc.Height = Config->ScreenHeight;
+    ResDesc.Alignment = 0;
+    ResDesc.MipLevels = 1;
+    ResDesc.DepthOrArraySize = 1;
+	ResDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	ResDesc.SampleDesc.Count = bMSAA4XEnabled ? 4 : 1;
+	ResDesc.SampleDesc.Quality = bMSAA4XEnabled ? (M4XQualityLevels - 1) : 0;
+    ResDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+    ResDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+    ResDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+    D3D12_CLEAR_VALUE ClearVal;
+    ClearVal.DepthStencil.Depth = 1.0f;
+    ClearVal.DepthStencil.Stencil = 0;
+    ClearVal.Format = DepthStencilFormat;
+
+    D3D12_HEAP_PROPERTIES Head = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+    D3dDevice->CreateCommittedResource(
+        &Head,
+        D3D12_HEAP_FLAG_NONE,
+        &ResDesc,
+        D3D12_RESOURCE_STATE_COMMON,
+        &ClearVal, 
+        IID_PPV_ARGS(DepthStencilBuffer.GetAddressOf()));
+
+    D3D12_DEPTH_STENCIL_VIEW_DESC DSVDesc;
+    DSVDesc.Format = DepthStencilFormat;
+    DSVDesc.Texture2D.MipSlice = 0;
+    DSVDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    DSVDesc.Flags = D3D12_DSV_FLAG_NONE;
+    D3dDevice->CreateDepthStencilView(
+        DepthStencilBuffer.Get(),
+        &DSVDesc,
+        DSVHeap->GetCPUDescriptorHandleForHeapStart());
+
+    D3D12_RESOURCE_BARRIER Barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        DepthStencilBuffer.Get(),
+        D3D12_RESOURCE_STATE_COMMON,
+        D3D12_RESOURCE_STATE_DEPTH_WRITE
+    );
+    GraphicsCommandList->ResourceBarrier(1, &Barrier);
+    GraphicsCommandList->Close();
+
+    ID3D12CommandList* CommandLists[] = { GraphicsCommandList.Get() };
+    CommandQueue->ExecuteCommandLists(_countof(CommandLists), CommandLists);
 
     Engine_Log("Windows PostInit Success!");
     return 0;
@@ -157,6 +206,12 @@ bool FWindowsEngine::InitWindows(FWinCommandParameters InParams)
 
 bool FWindowsEngine::InitDirect3D()
 {
+    ComPtr<ID3D12Debug> D3D12Debug;
+    if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&D3D12Debug))))
+    {
+        D3D12Debug->EnableDebugLayer();
+    }
+    
     ANALYZE_HRESULT(CreateDXGIFactory1(IID_PPV_ARGS(&DXGIFactory)));
 
     HRESULT D3dDeviceResult = D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&D3dDevice));
@@ -178,12 +233,17 @@ bool FWindowsEngine::InitDirect3D()
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         IID_PPV_ARGS(CommandAllocator.GetAddressOf())));
 
-    ANALYZE_HRESULT(D3dDevice->CreateCommandList(
+    HRESULT CmdResult = D3dDevice->CreateCommandList(
         0,
         D3D12_COMMAND_LIST_TYPE_DIRECT,
         CommandAllocator.Get(),
         nullptr,
-        IID_PPV_ARGS(GraphicsCommandList.GetAddressOf())));
+        IID_PPV_ARGS(GraphicsCommandList.GetAddressOf()));
+
+    if (FAILED(CmdResult))
+    {
+        Engine_Log_Error("Error = %i", (int)CmdResult);
+    }
 
     GraphicsCommandList->Close();
 
@@ -218,7 +278,11 @@ bool FWindowsEngine::InitDirect3D()
     SwapChainDesc.SampleDesc.Count = bMSAA4XEnabled ? 4 : 1;
     SwapChainDesc.SampleDesc.Quality = bMSAA4XEnabled ? (M4XQualityLevels - 1) : 0;
 
-    ANALYZE_HRESULT(DXGIFactory->CreateSwapChain(CommandQueue.Get(), &SwapChainDesc, SwapChain.GetAddressOf()));
+    CmdResult = DXGIFactory->CreateSwapChain(CommandQueue.Get(), &SwapChainDesc, SwapChain.GetAddressOf());
+    if (FAILED(CmdResult))
+    {
+        Engine_Log_Error("Error = %i", (int)CmdResult);
+    }
 
     // Create RTV
     D3D12_DESCRIPTOR_HEAP_DESC RTVDesc;
@@ -236,5 +300,8 @@ bool FWindowsEngine::InitDirect3D()
     DSVDesc.NodeMask = 0;
     ANALYZE_HRESULT(D3dDevice->CreateDescriptorHeap(&DSVDesc, IID_PPV_ARGS(DSVHeap.GetAddressOf())));
 
+    /*GraphicsCommandList->ResourceBarrier(
+        1,
+        &D3D12_RESOURCE_BARRIER::Transition(DSVDesc));*/
     return false;
 }

@@ -141,6 +141,12 @@
     <ClCompile Include="Engine\Platform\MessageProcess.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Config\RenderConfig.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Rendering\DirectX12\DDSTextureLoader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="simple_library\private\simple_channel\simple_net_connetion\simple_connetion_tcp.h">
@@ -315,6 +321,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Platform\MessageProcess.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Config\RenderConfig.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\DirectX12\d3dx12.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Rendering\DirectX12\DDSTextureLoader.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
